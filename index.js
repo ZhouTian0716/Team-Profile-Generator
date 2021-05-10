@@ -2,8 +2,6 @@
 const generateProfile = require('./utils/generateProfile');
 const inquirer = require('inquirer');
 const fs = require('fs');
-// const util = require('util');
-// const writeFileAsync = util.promisify(fs.writeFile);
 
 // To create an array of questions for user input
 const questions = [
@@ -24,6 +22,7 @@ const questions = [
 const nextMemeber = ["Engineer", "Intern", "Enough team members"];
 var currentRole = "Manager";
 var dataObj = [];
+var idArray = [];
 
 // User inputs here.
 const promptManager = () => {
@@ -44,7 +43,12 @@ const promptManager = () => {
         type: 'input',
         name: 'Manager_email',
         message: questions[2],
-        validate: (value) => {if(value){return true} else {return 'Please give an email address.'}}
+        validate: function(value){
+          let pass = value.match(
+              /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/);
+          if (pass){return true}
+          return "Please enter a valid email address."
+        }
       },
       {
         type: 'input',
@@ -77,13 +81,21 @@ const promptEngineer = () => {
         type: 'input',
         name: 'Engineer_id',
         message: questions[6],
-        validate: (value) => {if(value){return true} else {return 'Please give a valid number.'}}
+        validate: function(value){
+          if (!idArray.includes(value)){return true}
+          return "This ID is already taken. Please enter a different number."
+        }
       },
       {
         type: 'input',
         name: 'Engineer_email',
         message: questions[7],
-        validate: (value) => {if(value){return true} else {return 'Please give an email address.'}}
+        validate: function(value){
+          let pass = value.match(
+              /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/);
+          if (pass){return true}
+          return "Please enter a valid email address."
+        }
       },
       {
         type: 'input',
@@ -106,13 +118,21 @@ const promptIntern = () => {
         type: 'input',
         name: 'Intern_id',
         message: questions[10],
-        validate: (value) => {if(value){return true} else {return 'Please give a valid number.'}}
+        validate: function(value){
+          if (!idArray.includes(value)){return true}
+          return "This ID is already taken. Please enter a different number."
+        }
       },
       {
         type: 'input',
         name: 'Intern_email',
         message: questions[11],
-        validate: (value) => {if(value){return true} else {return 'Please give an email address.'}}
+        validate: function(value){
+          let pass = value.match(
+              /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/);
+          if (pass){return true}
+          return "Please enter a valid email address."
+        }
       },
       {
         type: 'input',
@@ -123,41 +143,34 @@ const promptIntern = () => {
     ]);
 };
 
-
-
-
-
-// Using writeFileAsync as a promise  
-const runApp = () => {
-    console.log('Please build your team by answering these questions.');
-    promptManager()
-        .then((res) => dataObj.push(res))
-        .then(()=>promptRole().then((res) => currentRole = res.nextMemeber))
-        .then(()=>addMembers())
-          .then(() => fs.writeFile('Profile_generated.html', generateProfile(dataObj), 
-          (err) => err ? console.log(err) : console.log('Check file with: open Profile_generated.html')))
-        
-        .catch((err) => console.error(err));
-  };
-  
-runApp();
-
-
-
-function addMembers(){
+function  addMembers(){
     if(currentRole == "Engineer"){ 
         promptEngineer()
-            .then((res) => dataObj.push(res))
+            .then((res) => {dataObj.push(res); idArray.push(res.Engineer_id)})
             .then(()=>promptRole().then((res) => currentRole = res.nextMemeber))
             .then(()=>addMembers())
             .catch((err) => console.error(err));
     }
     else if (currentRole == "Intern"){
         promptIntern()
-            .then((res) => dataObj.push(res))
+            .then((res) => {dataObj.push(res); idArray.push(res.Intern_id)})
             .then(()=>promptRole().then((res) => currentRole = res.nextMemeber))
             .then(()=>addMembers())
             .catch((err) => console.error(err));
     }
-    else {console.log(dataObj)} 
+    else {
+      console.log(dataObj);
+      fs.writeFile('Profile_generated.html', generateProfile(dataObj), 
+      (err) => err ? console.log(err) : console.log('Check file with: open Profile_generated.html'));
+    } 
 }
+
+const runApp = () => {
+  console.log('Please build your team by answering these questions.');
+  promptManager()
+    .then((res) => {dataObj.push(res); idArray.push(res.Manager_id)})
+    .then(()=>promptRole().then((res) => currentRole = res.nextMemeber))
+    .then(()=>addMembers())
+    .catch((err) => console.error(err));
+};
+runApp();
